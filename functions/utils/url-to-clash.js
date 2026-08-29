@@ -234,6 +234,20 @@ if (network === 'xhttp') {
                     extra.xPaddingKey;
             }
 
+            if (Object.prototype.hasOwnProperty.call(extra, 'xPaddingBytes')) {
+                xhttpOpts['x-padding-bytes'] = extra.xPaddingBytes;
+            }
+            if (Object.prototype.hasOwnProperty.call(extra, 'scMaxConcurrentPosts')) {
+                xhttpOpts['sc-max-concurrent-posts'] = extra.scMaxConcurrentPosts;
+            }
+            if (Object.prototype.hasOwnProperty.call(extra, 'reuseSettings')) {
+                xhttpOpts['reuse-settings'] = extra.reuseSettings;
+            }
+            if (Object.prototype.hasOwnProperty.call(extra, 'headers') && extra.headers) {
+                // 合并 headers，保留已有的 Host
+                xhttpOpts.headers = { ...(xhttpOpts.headers || {}), ...extra.headers };
+            }
+
         } catch (e) {
             // extra 非法时不能让整个订阅转换失败
             console.warn(
@@ -501,7 +515,7 @@ function parseVmessUrl(url) {
         // HTTP 配置
         if (network === 'http') {
             const httpOpts = {
-                path: config.path || '/',
+                path: Array.isArray(config.path) ? config.path : [config.path || '/'],
                 headers: {
                     Host: config.host ? config.host.split(',').map(h => h.trim()) : []
                 }

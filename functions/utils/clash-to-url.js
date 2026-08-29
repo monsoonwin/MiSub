@@ -146,6 +146,21 @@ export function convertClashProxyToUrl(proxy) {
                 const xhttpHost = xhttpOpts.host || xhttpOpts.headers?.Host;
                 if (xhttpHost) params.push(`host=${encodeURIComponent(xhttpHost)}`);
                 if (xhttpOpts.mode) params.push(`mode=${encodeURIComponent(xhttpOpts.mode)}`);
+
+                // 把无法直接编码进 URL 的高级字段打包进 extra，避免 URL 往返丢失
+                const extra = {};
+                if (xhttpOpts['x-padding-obfs-mode'] !== undefined) extra.xPaddingObfsMode = xhttpOpts['x-padding-obfs-mode'];
+                if (xhttpOpts['x-padding-method'] !== undefined) extra.xPaddingMethod = xhttpOpts['x-padding-method'];
+                if (xhttpOpts['x-padding-placement'] !== undefined) extra.xPaddingPlacement = xhttpOpts['x-padding-placement'];
+                if (xhttpOpts['x-padding-header'] !== undefined) extra.xPaddingHeader = xhttpOpts['x-padding-header'];
+                if (xhttpOpts['x-padding-key'] !== undefined) extra.xPaddingKey = xhttpOpts['x-padding-key'];
+                if (xhttpOpts['x-padding-bytes'] !== undefined) extra.xPaddingBytes = String(xhttpOpts['x-padding-bytes']);
+                if (xhttpOpts['sc-max-concurrent-posts'] !== undefined) extra.scMaxConcurrentPosts = xhttpOpts['sc-max-concurrent-posts'];
+                if (xhttpOpts['reuse-settings'] !== undefined) extra.reuseSettings = xhttpOpts['reuse-settings'];
+                if (xhttpOpts.headers) extra.headers = xhttpOpts.headers;
+                if (Object.keys(extra).length > 0) {
+                    params.push(`extra=${encodeURIComponent(JSON.stringify(extra))}`);
+                }
             }
             const realityOpts = proxy['reality-opts'];
             if (realityOpts) {
@@ -160,6 +175,10 @@ export function convertClashProxyToUrl(proxy) {
             const sniVal = proxy.servername !== undefined ? proxy.servername : proxy.sni;
             if (sniVal !== undefined) params.push(`sni=${encodeURIComponent(sniVal)}`);
             if (proxy['client-fingerprint']) params.push(`fp=${encodeURIComponent(proxy['client-fingerprint'])}`);
+            // 保留 alpn（数组按逗号拼接，解析时 split 还原）
+            if (Array.isArray(proxy.alpn) && proxy.alpn.length > 0) {
+                params.push(`alpn=${encodeURIComponent(proxy.alpn.join(','))}`);
+            }
             if (proxy['dialer-proxy']) params.push(`dp=${encodeURIComponent(proxy['dialer-proxy'])}`);
             return `vless://${uuid}@${server}:${port}?${params.join('&')}#${encodeURIComponent(name)}`;
         }
